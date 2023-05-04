@@ -1,7 +1,10 @@
 import sys
+from unittest import result
 import imageio.v2 as imageio
 from imageio.core.util import Array
 from numpy import array as npArray, uint8 
+import multiprocessing as mp
+
 
 def main():
   print("HELLO WORLD")
@@ -25,19 +28,34 @@ def main():
   imageio.imwrite(destImagePath, newImage)
 
 
+
 def amogussify(rawImageMatrix: Array):
+
+  pool = mp.Pool()
+
   convertedRowList = []
   i = 0
 
-  for row in rawImageMatrix:
-    print("Processing row #", i)
-    convertedRowList.extend(amogussifyRow(row))
-    i += 1
+  results_async = [pool.apply_async(amogussifyRow, (rawImageMatrix[i], i)) for i in range (len(rawImageMatrix))]
+  results = [r.get() for r in results_async]
+
+  # results_async = pool.map_async(amogussify)
+
+  for row in results:
+    convertedRowList.extend(row)
+
+  # for row in rawImageMatrix:
+    
+  #   convertedRowList.extend(amogussifyRow(row))
+  #   i += 1
 
   return Array(npArray(convertedRowList))
 
 
-def amogussifyRow(rawRow: Array):
+
+def amogussifyRow(rawRow: Array, idx: int = 0):
+  print("Processing row #", idx)
+
   convertedPixelList = []
 
   for rawPixel in rawRow:
@@ -50,6 +68,7 @@ def amogussifyRow(rawRow: Array):
       marchedPixelList[i].extend(convertedPixel[i])
       
   return Array(npArray(marchedPixelList))
+
 
 
 def amogussifyPixel(rawPixel: Array):
@@ -75,4 +94,6 @@ def amogussifyPixel(rawPixel: Array):
 
   return Array(newAmogus)
 
-main()
+
+if __name__ == "__main__":
+  main()
